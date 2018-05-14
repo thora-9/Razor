@@ -7,6 +7,7 @@ source('juli_ET_v2.R')
 source('stage1.R')
 source('euler.R')
 source('SCS_curve.R')
+source('LU_calendar.R')
 
 
 ########################## Long term rainfall
@@ -29,6 +30,19 @@ t_daily=subdaily2daily(t2,FUN=sum)*1000
 #############################
 ##Box 1: Runoff generation
 #############################
+LU_details=tribble(
+              ~LU,~Irrigation,~Area,~plant_month,~LI,~LD,~LM,~LL,~KCL,~KCLP,~KCM,~KCL,~RD,~CN,
+              'Rice',NA,50,10,20,30,30,25,1,1.15,1.20,0.9,300,NA,
+              'Kharif_Millet',NA,20,10,20,35,40,30,0.3,0.3,1.2,0.5,300,70,
+              'Kharif_Fallow',NA,0,0,0,0,0,0,0,0,0,0,0,58,
+              'Juliflora',NA,0,0,0,0,0,0,0,0,0,0,0,66,
+              'Cotton',NA,0,0,0,0,0,0,0,0,0,0,0,66,
+              'Rabi_Fallow',NA,40,0,0,0,0,0,0,0,0,0,0,66,
+              'Summer_Fallow',NA,100,0,0,0,0,0,0,0,0,0,0,66)
+
+
+LU_calen=LU_calendar(LU_details)
+
 HRU_catch1=tribble(
             ~Percent,~Calendar,
             50,c(1,0,0,0,0,0,0,0,0,1,1,1),
@@ -81,6 +95,7 @@ Qf=vector()
 Qu=vector()
 Sc1=vector()
 Sc2=vector()
+runoff=matrix(,nrow = nrow(HRU_catch1),ncol=length(t_daily))
 
 #Tank variables
 inflow_f1=vector()
@@ -119,12 +134,16 @@ for(i in 1:(time)) {
     rain_5=sum(t_daily[(i-5):(i-1)])*1000
   } else {rain_5=30}
   
-  for (j 1:nrow(HRU_catch1)){
+  for (j in 1:nrow(HRU_catch1)){
     cur_LU=HRU_catch1[[j,2]][cur_month]
     if(cur_LU!=1){
-      runoff[i,j]=SCS_curve(cur_LU,cur_P,rain_5,CN_List)
-    }
+      runoff[j,i]=SCS_curve(cur_LU,cur_P,rain_5,CN_List)
+    } else {runoff[j,i]=0}
   }
+  
+  #Estimating the Soil Moisture Balance for each HRU
+  
+  
   
   if (cur_P==0){}
   #Bucket 1  
